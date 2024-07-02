@@ -709,7 +709,17 @@ func resourceFlow() *schema.Resource {
 			},
 			"flow_status": {
 				Type:     schema.TypeString,
+				Optional: true,
 				Computed: true,
+				ValidateDiagFunc: validation.ToDiagFunc(
+					validation.StringInSlice([]string{
+						string(types.FlowStatusActive),
+						string(types.FlowStatusSuspended),
+						string(types.FlowStatusDraft),
+					}, false),
+				),
+				Description: "The status of the flow. Manually settable values are 'Active', 'Suspended', or 'Draft'. " +
+					"Other statuses like 'Errored' may be set by AWS but cannot be set manually.",
 			},
 			"kms_arn": {
 				Type:         schema.TypeString,
