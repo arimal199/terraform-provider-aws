@@ -1275,6 +1275,15 @@ func resourceFlow() *schema.Resource {
 	}
 }
 
+func startFlow(ctx context.Context, conn *appflow.Client, status types.FlowStatus, name *string) (*appflow.StartFlowOutput, error) {
+	if status == types.FlowStatusActive {
+		input := &appflow.StartFlowInput{FlowName: name}
+		output, err := conn.StartFlow(ctx, input)
+		return output, err
+	}
+	return nil, nil
+}
+
 func resourceFlowCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
@@ -1305,6 +1314,19 @@ func resourceFlowCreate(ctx context.Context, d *schema.ResourceData, meta interf
 	}
 
 	d.SetId(aws.ToString(output.FlowArn))
+
+	if input.TriggerConfig.TriggerType !=
+		types.TriggerTypeOndemand {
+		if v, ok := d.GetOk("flow_status"); ok {
+			status := types.FlowStatus(v.(string))
+			_, err = startFlow(
+				ctx, conn, status, input.FlowName)
+		}
+	}
+
+	if err != nil {
+		return sdkdiag.AppendErrorf(diags, "activating AppFlow Flow (%s): %s", name, err)
+	}
 
 	return append(diags, resourceFlowRead(ctx, d, meta)...)
 }
